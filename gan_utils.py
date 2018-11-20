@@ -87,7 +87,7 @@ def weights_init(m):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
         
-def sample_mask(batch_size, sizes, realdata, noise_level=0.2, device=None):
+def sample_mask(batch_size, sizes, realdata, noise_level=0.1, device=None):
     masks = [torch.randn(batch_size, 1, size, size, device=device, dtype=torch.float32) * noise_level for size in sizes]
     for i in range(batch_size):
         n = np.random.randint(len(realdata))
@@ -128,5 +128,5 @@ def noise_input(data, noise_level=0, device=None, clip=False):
             noise_data = torch.clamp(noise_data, -1, 1)
     return noise_data
 
-def sigmoid(x, alpha=0.02):
+def sigmoid(x, alpha=0.01):
     return 1/(1+np.exp(-alpha*x))
