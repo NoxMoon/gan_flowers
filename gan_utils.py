@@ -7,6 +7,24 @@ from tqdm import tqdm
 
 class flower_dataset(Dataset):
     
+    def __init__(self, image_paths, transform=None):
+        self.len = len(image_paths)
+        self.transform = transform
+        self.X = []
+        for path in tqdm(image_paths):
+            image = io.imread(path)
+            if self.transform is not None:
+                image = transform(image)
+            self.X.append(image)
+        
+    def __len__(self):
+        return self.len
+    
+    def __getitem__(self, idx):
+        return self.X[idx]
+
+class flower_mask_dataset(Dataset):
+    
     def __init__(self, image_paths, mask_paths=None, mask_sizes=None, 
                  transform=None, mask_transform=None, in_memory=True):
         self.len = len(image_paths)
