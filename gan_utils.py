@@ -148,3 +148,137 @@ def noise_input(data, noise_level=0, device=None, clip=False):
 
 def sigmoid(x, alpha=0.01):
     return 1/(1+np.exp(-alpha*x))
+
+class Generator(nn.Module):
+    def __init__(self, ngpu, ngf, nz, nc, mask_sizes=[]):
+        super(Generator, self).__init__()
+        self.ngpu = ngpu
+        self.ngf = ngf
+        self.nz = nz
+        self.nc = nc
+        self.mask_sizes = mask_sizes
+        self.m2 = int(2 in mask_sizes)
+        self.m4 = int(4 in mask_sizes)
+        self.m8 = int(8 in mask_sizes)
+        self.m16 = int(16 in mask_sizes)
+        self.m32 = int(32 in mask_sizes)
+        self.layer1 = nn.Sequential(
+            # input is Z, going into a convolution
+            # input Z(32,2,2)
+            nn.ConvTranspose2d(self.nz + self.m2, self.ngf * 8, 4, 2, 0, bias=False),
+            nn.ReflectionPad2d(-1),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True)
+        )
+        self.layer2 = nn.Sequential(
+            # state size. (ngf*8) x 4 x 4
+            nn.ConvTranspose2d(self.ngf * 8 + self.m4, self.ngf * 4, 4, 2, 0, bias=False),
+            nn.ReflectionPad2d(-1),
+            nn.BatchNorm2d(ngf * 4),
+            nn.ReLU(True)
+        )
+        self.layer3 = nn.Sequential(
+            # state size. (ngf*4) x 8 x 8            
+            nn.ConvTranspose2d(self.ngf * 4 + self.m8, self.ngf * 2, 4, 2, 0, bias=False),
+            nn.ReflectionPad2d(-1),
+            nn.BatchNorm2d(ngf * 2),
+            nn.ReLU(True)
+        )
+        self.layer4 = nn.Sequential(
+            # state size. (ngf*2) x 16 x 16
+            nn.ConvTranspose2d(self.ngf * 2 + self.m16, self.ngf, 4, 2, 0, bias=False),
+            nn.ReflectionPad2d(-1),
+            nn.BatchNorm2d(ngf),
+            nn.ReLU(True)
+        )
+        self.layer5 = nn.Sequential(
+            # state size. (ngf) x 32 x 32            
+            nn.ConvTranspose2d(self.ngf + self.m32, self.nc, 4, 2, 0, bias=False),
+            nn.ReflectionPad2d(-1),
+            nn.Tanh()
+            # state size. (nc) x 64 x 64
+        )
+
+    def forward(self, noise, mask=None):
+        if self.m2 == 1:
+            x = torch.cat((noise, mask[0]), dim=1) #2*2
+            x = self.layer1(x)
+        else:
+            x = self.layer1(noise)
+            
+        if self.m4 == 1:
+            x = torch.cat((x, mask[1]), dim=1) #4*4
+        x = self.layer2(x)
+        
+        if self.m8 == 1:
+            x = torch.cat((x, mask[2]), dim=1) #8*8
+        x = self.layer3(x)
+        
+        if self.m16 == 1:
+            x = torch.cat((x, mask[3]), dim=1) #16*16
+        x = self.layer4(x)
+        
+        if self.m32 == 1:
+            x = torch.cat((x, mask[4]), dim=1) #32*32
+        x = self.layer5(x)
+        return x
+    
+class Discriminator(nn.Module):
+    def __init__(self, ngpu, ndf, nc, mask_sizes=[]):
+        super(Discriminator, self).__init__()
+        self.ngpu = ngpu
+        self.ndf = ndf
+        self.nc = nc
+        self.mask_sizes = mask_sizes
+        self.m4 = int(4 in mask_sizes)
+        self.m8 = int(8 in mask_sizes)
+        self.m16 = int(16 in mask_sizes)
+        self.m32 = int(32 in mask_sizes)
+        self.layer1 = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(self.nc, self.ndf, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        self.layer2 = nn.Sequential(
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(self.ndf + self.m32, self.ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        self.layer3 = nn.Sequential(
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(self.ndf * 2 + self.m16, self.ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 4),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        self.layer4 = nn.Sequential(
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(self.ndf * 4 + self.m8, self.ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        self.layer5 = nn.Sequential(
+        # state size. (ndf*8) x 4 x 4
+            nn.Conv2d(self.ndf * 8 + self.m4, 1, 4, 1, 0, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, image, mask=None):
+        x = self.layer1(image)
+        
+        if self.m32 == 1:
+            x = torch.cat((x, mask[4]), dim=1) #32*32
+        x = self.layer2(x)
+        
+        if self.m16 == 1:
+            x = torch.cat((x, mask[3]), dim=1) #16*16
+        x = self.layer3(x)
+        
+        if self.m8 == 1:
+            x = torch.cat((x, mask[2]), dim=1) #8*8
+        x = self.layer4(x)
+        
+        if self.m4 == 1:
+            x = torch.cat((x, mask[1]), dim=1) #4*4
+        x = self.layer5(x)
+        return x
