@@ -149,6 +149,10 @@ def noise_input(data, noise_level=0, device=None, clip=False):
 def sigmoid(x, alpha=0.01):
     return 1/(1+np.exp(-alpha*x))
 
+def adjust_learning_rate(optimizer, decay):
+    for param_group in optimizer.param_groups:
+        param_group['lr'] *= decay
+        
 class Generator(nn.Module):
     def __init__(self, ngpu, ngf, nz, nc, mask_sizes=[]):
         super(Generator, self).__init__()
