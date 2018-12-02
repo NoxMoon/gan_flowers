@@ -6,7 +6,7 @@ from skimage import io, transform
 from tqdm import tqdm
 
 class flower_dataset(Dataset):
-    
+# flower dataset    
     def __init__(self, image_paths, transform=None):
         self.len = len(image_paths)
         self.transform = transform
@@ -24,7 +24,7 @@ class flower_dataset(Dataset):
         return self.X[idx]
 
 class flower_mask_dataset(Dataset):
-    
+# flower dataset with masks (masks of different sizes are stored in a list)  
     def __init__(self, image_paths, mask_paths=None, mask_sizes=None, 
                  transform=None, mask_transform=None, in_memory=True):
         self.len = len(image_paths)
@@ -106,6 +106,7 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
         
 def sample_mask(batch_size, sizes, realdata, noise_level=0.1, device=None):
+# randomly sample masks from the existing masks in the read dataset    
     masks = [torch.randn(batch_size, 1, size, size, device=device, dtype=torch.float32) * noise_level for size in sizes]
     for i in range(batch_size):
         n = np.random.randint(len(realdata))
@@ -114,6 +115,7 @@ def sample_mask(batch_size, sizes, realdata, noise_level=0.1, device=None):
     return masks
 
 def mask_pair_to_label(mask, real_mask, device=None):
+# compute label based on the similarity of two masks (did not use)
     mask1 = mask[-1]
     mask2 = real_mask[-1]
     b_size = mask1.size()[0]
@@ -125,6 +127,7 @@ def mask_pair_to_label(mask, real_mask, device=None):
     return label
 
 def get_label(size, real, soft=0.2, noise=False, noise_level=0.1, device=None):
+# produce soft labels
     label = torch.full((size,), real, device=device)
     if real == 1:
         label -= torch.rand(size, device=device) * soft
@@ -137,6 +140,7 @@ def get_label(size, real, soft=0.2, noise=False, noise_level=0.1, device=None):
     return label
 
 def noise_input(data, noise_level=0, device=None, clip=False):
+# add noise to the input
     if noise_level==0:
         return data.to(device)
     else:
