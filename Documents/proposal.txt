@@ -1,0 +1,11 @@
+Generative Adverserial Network for Flowers
+
+Goal:
+1. Experiment with GAN for flower pictures.
+2. Adapt the network struction to be able to control the location of flowers in generated pictures.
+
+Dataset:
+Imagenet(http://www.image-net.org)
+Oxford flower dataset (http://www.robots.ox.ac.uk/~vgg/data/flowers/17/)
+
+I will use PyTorch for this project. The starting point can be this PyTorch DCGAN tutorial: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html. We may also need image segmentation to generate dataset for location control task.
