@@ -1,3 +1,9 @@
 model_checkpoints/GAN_z22 filter=lfs diff=lfs merge=lfs -text
 model_checkpoints/GAN_z22_mask filter=lfs diff=lfs merge=lfs -text
 model_checkpoints/unet filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/102flowers_image64.zip filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/102flowers_mask64.zip filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/102flowers_mask_pred64.zip filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/17flowers.zip filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/17flowers_mask64.zip filter=lfs diff=lfs merge=lfs -text
+oxford_flowers/17flowers_trimap.zip filter=lfs diff=lfs merge=lfs -text
